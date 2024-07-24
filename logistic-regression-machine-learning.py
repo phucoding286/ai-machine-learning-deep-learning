@@ -1,72 +1,35 @@
-import random
 import numpy as np
 
 class BagOfWord:
-    def __init__(self, split="char"):
-        """
-        split: "word" or "char"
-        """
-        self.split = split
+    def __init__(self, batch_data):
+        self.batch_data = batch_data
         self.max_len = 0
-
-    def bag_of_word_w(self, txt_list):
-        bag_of_word = []
-
-        for i in range(len(txt_list)):
-
-            sentence = txt_list[i].split()
-            bag = []
-
-            for n in range(len(sentence)):
-                sum_of_apeer = 0
-                for w in range(len(sentence)):
-                    if sentence[n] == sentence[w]:
-                        sum_of_apeer += 1
-
-                bag.append(sum_of_apeer-1)
-            bag_of_word.append(bag)
-
-            if len(bag) > self.max_len and len(txt_list) != 1:
-                self.max_len = len(bag)
-
-        for i in range(len(bag_of_word)):
-            for _ in range(len(bag_of_word[i]), self.max_len):
-                bag_of_word[i].append(0)
-        bag_of_word[0] = bag_of_word[0][:self.max_len]
-
-        return np.array(bag_of_word)
     
-    def bag_of_word_c(self, txt_list):
-        bag_of_word = []
+    # hàm đếm số lần xuất hiện của từ
+    def count(self, sentence):
+        bag = []
+        for char in list(sentence): 
+            appeer_times = 0
+            for char_count in list(sentence): appeer_times += 1 if char in char_count else 0
+            bag.append(appeer_times - 1 if appeer_times > 1 else 0)
+        return bag
+    
+    def fit(self, bag_txt):
+        # tạo lô mã hóa với cách điếm số lần xuất hiện của từ
+        batch_bag = []
+        for sentence in bag_txt:
+            count_out = self.count(sentence)
+            batch_bag.append(count_out)
+            if len(count_out) > self.max_len:
+                self.max_len = len(count_out)
+        # chuẩn hóa độ dài của văn bản mã hóa
+        for i in range(len(batch_bag)):
+            if len(batch_bag[i]) < self.max_len: 
+                batch_bag[i] = batch_bag[i] + [0 for _ in range(len(batch_bag[i]), self.max_len)]
+            else:
+                batch_bag[i] = batch_bag[i][:self.max_len]
 
-        for i in range(len(txt_list)):
-
-            sentence = list(txt_list[i])
-            bag = []
-            for n in range(len(sentence)):
-                sum_of_apeer = 0
-                for w in range(len(sentence)):
-                    if sentence[n] == sentence[w]:
-                        sum_of_apeer += 1
-
-                bag.append(sum_of_apeer-1)
-            bag_of_word.append(bag)
-
-            if len(bag) > self.max_len and len(txt_list) != 1:
-                self.max_len = len(bag)
-
-        for i in range(len(bag_of_word)):
-            for _ in range(len(bag_of_word[i]), self.max_len):
-                bag_of_word[i].append(0)
-        bag_of_word[0] = bag_of_word[0][:self.max_len]
-
-        return np.array(bag_of_word)
-
-    def fit(self, txt_list):
-        if self.split.strip().lower() == "word":
-            return self.bag_of_word_w(txt_list)
-        elif self.split.strip().lower() == "char":
-            return self.bag_of_word_c(txt_list)
+        return np.array(batch_bag)
 
 class LogisticRegression:
     def __init__(self, X, y):
@@ -120,7 +83,8 @@ x = [
      "Cuộc sống của tôi dường như chỉ toàn là những chuỗi ngày vô nghĩa và không có điểm nhấn.",
      "Mọi người xung quanh dường như đều thành công và hạnh phúc, trong khi tôi vẫn đứng yên một chỗ, không thể tiến lên.",
      "Tôi cảm thấy buồn bả và cô đơn quá",
-     "tôi đang buồn và cảm thấy tự ti"
+     "tôi đang buồn và cảm thấy tự ti",
+     "tôi cảm thấy buồn bả tự ti và tiêu cực",
      
      "Hôm nay là một ngày tuyệt vời và tôi cảm thấy tràn đầy năng lượng để hoàn thành mọi nhiệm vụ.",
      "Công việc của tôi mang lại niềm vui và sự thỏa mãn, tôi rất tự hào về những gì mình đã đạt được.",
@@ -132,31 +96,34 @@ x = [
      "Công ty tôi đang làm việc có môi trường làm việc tích cực, mọi người luôn hỗ trợ và động viên lẫn nhau.",
      "Cuộc sống của tôi đầy ý nghĩa và thú vị, mỗi ngày đều là một trải nghiệm mới mẻ và đáng nhớ.",
      "Tôi tự tin với những gì mình đang làm, và tôi tin rằng thành công và hạnh phúc sẽ đến với mình.",
-     "tôi cảm thấy vui quá hehe"]
+     "tôi cảm thấy vui quá hehe",
+     "tôi cảm thấy hạnh phúc tự tin và vui vẻ",
+     "tôi đang cảm thấy rất vui vẻ"
+     ]
 y = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 
 ]
 
-bag_of_word = BagOfWord(split="char")
+bag_of_word = BagOfWord(x)
 x_bag_of_word = bag_of_word.fit(x)
 
 model = LogisticRegression(x_bag_of_word, y)
 model.training(
-    epoch=1000,
-    lr=0.2,
-    details=True,
-    break_train=0.1
+    epoch=10000,
+    lr=0.1,
+    details=False,
+    break_train=0.0000001
 )
 
-x_test_negative = ["tôi cảm thấy bản thân thật tệ hại"]
-x_test_positive = ["tôi rất tự tin về bản thân"]
+x_test_negative = ["tôi cảm thấy mệt mỏi và cực kỳ tự ti về bản thân"]
+x_test_positive = ["tôi đang cảm thấy rất vui vẻ và hạnh phúc về bản thân"]
 
-x_test_bag_of_word = bag_of_word.fit(x_test_positive)
+x_test_bag_of_word = bag_of_word.fit(x_test_negative)
 output = model.predictions(x_test_bag_of_word)
 
 print(output)
 predict_op = classify_binary(output, ["văn bản tiêu cực", "văn bản tích cực"])
 
-print(f"kết quả dự đoán cho câu '{x_test_positive[0]}' là '{predict_op}")
+print(f"kết quả dự đoán cho câu '{x_test_negative[0]}' là '{predict_op}")
